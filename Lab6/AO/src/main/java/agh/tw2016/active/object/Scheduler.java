@@ -14,12 +14,18 @@ public class Scheduler extends Thread implements Runnable{
         super();
         this.queue = ActiveQueue.getInstance();
     }
+    public void produce(){
+        servant.produce(queue.getNextProducer());
+    }
+    public void consume(){
+        servant.consume(queue.getNextConsumer());
+    }
     public void run(){
         while(true) {
             if (servant.isEmpty()) {
-                servant.produce(queue.getNextProducer());
+                this.produce();
             } else if (servant.isFull()) {
-                servant.consume(queue.getNextConsumer());
+                this.consume();
             } else {
                 Task task = queue.getNextTask();
                 if (task.getType() == 1 && (!task.isFinished())) {

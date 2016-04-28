@@ -11,6 +11,7 @@ public class Servant {
     private int count;
     private int readIndex;
     private int writeIndex;
+    private long taskId;
     public Servant(Scheduler scheduler, int size){
         this.scheduler = scheduler;
         count = 0;
@@ -18,6 +19,7 @@ public class Servant {
         readIndex = 0;
         writeIndex = 0;
         buffer = new int[size];
+        taskId = 0;
     }
     public boolean isEmpty(){
         return (count == 0);
@@ -27,24 +29,34 @@ public class Servant {
     }
     public void consume(Task task){
         int portion = task.portionSize;
+        while(portion > count){
+            scheduler.produce();
+        }
         int index = readIndex;
         for(int i = readIndex; i < readIndex + portion; i++){
             buffer[i%size] = 0;
         }
+        count -= portion;
         readIndex += portion;
         readIndex %= size;
-        task.getFuture().setResult("Consumer: from " + index + " to " + readIndex + " with size: " + portion);
+        taskId++;
+        task.getFuture().setResult(taskId + " Consumer: from " + index + " to " + readIndex + " with size: " + portion);
         task.finish();
     }
     public void produce(Task task){
         int portion = task.portionSize;
+        while(portion > (size - count)){
+            scheduler.consume();
+        }
         int index = writeIndex;
         for(int i = writeIndex; i < readIndex + portion; i++){
             buffer[i%size] = 1;
         }
+        count += portion;
         writeIndex += portion;
         writeIndex %= size;
-        task.getFuture().setResult("Producer: from " + index + " to " + writeIndex + " with size: " + portion);
+        taskId++;
+        task.getFuture().setResult(taskId + " Producer: from " + index + " to " + writeIndex + " with size: " + portion);
         task.finish();
     }
 

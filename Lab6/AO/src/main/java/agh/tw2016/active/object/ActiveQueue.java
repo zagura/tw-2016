@@ -33,7 +33,6 @@ public class ActiveQueue {
     }
     public void putTask(Task task){
         queueLock.lock();
-        boolean empty = false;
         int condition = -1;
         try{
             fullQueue.addLast(task);
@@ -81,6 +80,17 @@ public class ActiveQueue {
         boolean rightTask = false;
         while(!rightTask){
             task = fullQueue.pollFirst();
+            while(task == null){
+                emptyFullQueue = true;
+                while(emptyFullQueue){
+                    try {
+                        emptyQueue.await();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                task = fullQueue.pollFirst();
+            }
             if(!task.isFinished()){
                 int type = task.getType();
                 if(type == 1){
@@ -89,7 +99,7 @@ public class ActiveQueue {
                     taskWithType = consumerQueue.pollFirst();
                 }
             }
-            if(taskWithType == task && task != null){
+            if(taskWithType != null && task != null){
                 rightTask = true;
             }
         }

@@ -19,8 +19,9 @@ public class Consumer implements Runnable {
     @Override
     public void run() {
         Random r = new Random();
+        System.out.println("Consumer started");
         while(true){
-            Future f = proxy.consume(r.nextInt(size));
+            Future f = proxy.consume(r.nextInt(size - 1) + 1);
             long t1 = nanoTime();
             while(!f.isReady()){
                 try {
@@ -30,7 +31,7 @@ public class Consumer implements Runnable {
                 }
             }
             long t2 = nanoTime();
-            System.out.println(f.getResult() + "\nTime elapsed:  " + (t2-t1) + ". ");
+            System.out.println(f.getResult() + "\n\tTime elapsed:  " + (t2-t1) + ". ");
         }
     }
 }
