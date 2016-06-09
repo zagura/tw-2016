@@ -1,21 +1,21 @@
--module(cw2).
+-module(cw2_2_1).
 
--export([produce/2, consume/2, main/3, buffer/4]).
+-export([produce/2, consume/2, main/3, buffer/3]).
 
 
 produce(Buffer, ID) -> 
 	Buffer ! {produce, ID, self()},
 	receive
-		{accept, produce} -> timer:sleep(10),
-			produce(Buffer, ID);
+		{accept, Pid} -> timer:sleep(50),
+			produce(Pid, ID);
 		{reject, Pid} -> produce(Pid, ID)
 	end.
 
 consume(Buffer, ID) ->
 	Buffer ! {consume, ID, self()},
 	receive
-		{accept, consume} -> timer:sleep(10),
-			consume(Buffer, ID);
+		{accept, Pid} -> timer:sleep(50),
+			consume(Pid, ID);
 		{reject, Pid} -> consume(Pid, ID)
 	end.
 
@@ -30,12 +30,11 @@ buffer(0, Buf_ID, Next) ->
 	receive
 		{produce, ID, Pid} -> 
 			io:format("Producer ~p at index: ~p ~n", [ID, Buf_ID]),
-			Pid ! {accept, produce},
+			Pid ! {accept, Next},
 			buffer(1, Buf_ID, Next);
-		{consume, ID, Pid} -> 
+		{consume, _ID, Pid} -> 
 			Pid ! {reject, Next},
-			buffer(0, Buf_ID, Next);
-		
+			buffer(0, Buf_ID, Next)
 	end;
 	
 
@@ -44,11 +43,11 @@ buffer(1, Buf_ID, Next) ->
 	receive
 		{consume, ID, Pid} -> 
 			io:format("Consumer ~p at index: ~p ~n", [ID, Buf_ID]),
-			Pid ! {accept, consume},
+			Pid ! {accept, Next},
 			buffer(0, Buf_ID, Next);
-		{produce, ID, Pid} ->
+		{produce, _ID, Pid} ->
 			Pid ! {reject, Next},
-			buffer(1, Buf_ID, Next);
+			buffer(1, Buf_ID, Next)
 	end.
 	
 
